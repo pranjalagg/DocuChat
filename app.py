@@ -1,6 +1,17 @@
 import streamlit as st
 from dotenv import load_dotenv
 from utils import get_pdf_text, get_text_chunks, get_vector_store, get_conversation_chain
+from time import sleep
+
+def generate_response_stream(response, placeholder):
+    full_response = ""
+    for char in response["answer"]:
+        full_response += char
+        placeholder.markdown(full_response + "▌")
+        sleep(0.005)
+    
+    return full_response
+    placeholder.markdown(full_response)
 
 def main():
     if "conversations" not in st.session_state:
@@ -10,7 +21,7 @@ def main():
 
     st.set_page_config(page_title="DocuChat: Chat With Your PDFs", page_icon=":boooks:", layout="wide", initial_sidebar_state="auto")
     st.header("DocuChat: Chat With Your PDFs")
-    st.text_input("Ask a question about your PDF(s)")
+    # st.text_input("Ask a question about your PDF(s)")
 
     with st.sidebar:
         st.subheader("Your Documents")
@@ -39,10 +50,15 @@ def main():
             st.markdown(user_question)
         st.session_state.chat_history.append({"role": "user", "content": user_question})
         
-        response = st.session_state.conversation({"question": user_question})
-        st.session_state.chat_history.append({"role": "assistant", "content": response["answer"]})
         with st.chat_message("assistant"):
-            st.markdown(response["answer"])
+            response_placeholder = st.empty()
+            response = st.session_state.conversation({"question": user_question})
+            full_response = generate_response_stream(response, response_placeholder)
+            response_placeholder.markdown(full_response)
+            # st.markdown(full_response)
+            
+            
+        st.session_state.chat_history.append({"role": "assistant", "content": full_response})
         # st.write(response)
     
 
