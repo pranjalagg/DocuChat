@@ -1,7 +1,9 @@
 from PyPDF2 import PdfReader
 from langchain_text_splitters import CharacterTextSplitter
-from  langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -26,5 +28,16 @@ def get_vector_store(text_chunks):
     # embedding_model = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", show_progress=True)
     embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-    print("Done")
+    print("Vector Store Done")
     return vector_store
+
+def get_conversation_chain(vector_store):
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-8b")
+    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    conversation_chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        retriever=vector_store.as_retriever(),
+        memory=memory
+    )
+    print("Conversation Chain Done")
+    return conversation_chain 
